@@ -80,6 +80,9 @@ detect_mac80211() {
 		channel="11"
 		htmode=""
 		ht_capab=""
+		ssid_5ghz=""
+
+		ssid_suffix=_$(cat /sys/class/ieee80211/${dev}/macaddress | sed 's/.[0-9A-Fa-f]:.[0-9A-Fa-f]:.[0-9A-Fa-f]:\(.[0-9A-Fa-f]\):\(.[0-9A-Fa-f]\):\(.[0-9A-Fa-f]\)/\1\2\3/g' | tr :[a-z] :[A-Z])
 
 		iw phy "$dev" info | grep -q 'Capabilities:' && htmode=HT20
 
@@ -90,6 +93,8 @@ detect_mac80211() {
 		}
 
 		[ -n "$htmode" ] && ht_capab="set wireless.radio${devidx}.htmode=$htmode"
+
+		[ "$mode_band" = "a" ] && ssid_5ghz="_5GHz"
 
 		if [ -x /usr/bin/readlink -a -h /sys/class/ieee80211/${dev} ]; then
 			path="$(readlink -f /sys/class/ieee80211/${dev}/device)"
@@ -118,7 +123,7 @@ detect_mac80211() {
 			set wireless.default_radio${devidx}.device=radio${devidx}
 			set wireless.default_radio${devidx}.network=lan
 			set wireless.default_radio${devidx}.mode=ap
-			set wireless.default_radio${devidx}.ssid=OpenWrt
+			set wireless.default_radio${devidx}.ssid=OpenWrt${ssid_5ghz}${ssid_suffix}
 			set wireless.default_radio${devidx}.encryption=none
 EOF
 		uci -q commit wireless
