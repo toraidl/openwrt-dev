@@ -52,6 +52,19 @@ endef
 
 $(eval $(call KernelPackage,iio-ad799x))
 
+define KernelPackage/iio-bh1750
+  SUBMENU:=$(IIO_MENU)
+  DEPENDS:=+kmod-i2c-core +kmod-iio-core
+  TITLE:=ROHM BH1750 ambient light sensor
+  KCONFIG:= CONFIG_BH1750
+  FILES:=$(LINUX_DIR)/drivers/iio/light/bh1750.ko
+  AUTOLOAD:=$(call AutoLoad,56,bh1750)
+endef
+define KernelPackage/iio-bh1750/description
+  ROHM BH1750 ambient light sensor (i2c bus)
+endef
+$(eval $(call KernelPackage,iio-bh1750))
+
 define KernelPackage/iio-am2315
   SUBMENU:=$(IIO_MENU)
   DEPENDS:=+kmod-i2c-core +kmod-iio-core
@@ -102,7 +115,7 @@ $(eval $(call KernelPackage,iio-dht11))
 define KernelPackage/iio-bmp280
   SUBMENU:=$(IIO_MENU)
   TITLE:=BMP180/BMP280/BME280 pressure/temperatur sensor
-  DEPENDS:=@(LINUX_4_9||LINUX_4_14) +kmod-iio-core +kmod-regmap
+  DEPENDS:=@!LINUX_3_18 +kmod-iio-core +kmod-regmap
   KCONFIG:=CONFIG_BMP280
   FILES:=$(LINUX_DIR)/drivers/iio/pressure/bmp280.ko
 endef
