@@ -1,0 +1,52 @@
+diff --git a/drivers/mtd/nand/Kconfig b/drivers/mtd/nand/Kconfig
+index 3f2036f3..eb28d72c 100644
+--- a/drivers/mtd/nand/Kconfig
++++ b/drivers/mtd/nand/Kconfig
+@@ -1,3 +1,6 @@
++config MTD_NAND_CORE
++	tristate
++
+ config MTD_NAND_ECC
+ 	tristate
+ 
+@@ -563,4 +566,6 @@ config MTD_NAND_MTK
+ 	  Enables support for NAND controller on MTK SoCs.
+ 	  This controller is found on mt27xx, mt81xx, mt65xx SoCs.
+ 
++source "drivers/mtd/nand/spi/Kconfig"
++
+ endif # MTD_NAND
+diff --git a/drivers/mtd/nand/Makefile b/drivers/mtd/nand/Makefile
+index 6e2db700..31f477bb 100644
+--- a/drivers/mtd/nand/Makefile
++++ b/drivers/mtd/nand/Makefile
+@@ -1,5 +1,8 @@
+ # SPDX-License-Identifier: GPL-2.0
+ #
++nandcore-objs := core.o bbt.o
++obj-$(CONFIG_MTD_NAND_CORE) += nandcore.o
++
+ # linux/drivers/nand/Makefile
+ #
+ 
+@@ -68,3 +71,5 @@ nand-objs += nand_macronix.o
+ nand-objs += nand_micron.o
+ nand-objs += nand_samsung.o
+ nand-objs += nand_toshiba.o
++
++obj-y	+= spi/
+diff --git a/include/linux/spi/spi-mem.h b/include/linux/spi/spi-mem.h
+index 7195fbc2..69ee3045 100644
+--- a/include/linux/spi/spi-mem.h
++++ b/include/linux/spi/spi-mem.h
+@@ -3,7 +3,9 @@
+  * Copyright (C) 2018 Exceet Electronics GmbH
+  * Copyright (C) 2018 Bootlin
+  *
+- * Author: Boris Brezillon <boris.brezillon@bootlin.com>
++ * Author:
++ *	Peter Pan <peterpandong@micron.com>
++ *	Boris Brezillon <boris.brezillon@bootlin.com>
+  */
+ 
+ #ifndef __LINUX_SPI_MEM_H
