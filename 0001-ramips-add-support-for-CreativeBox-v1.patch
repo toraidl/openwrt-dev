@@ -1,0 +1,261 @@
+From 9ca1b4aad366cd8a3c7cd51670e1a3b97afcfd21 Mon Sep 17 00:00:00 2001
+From: Weijie Gao <hackpascal@gmail.com>
+Date: Sun, 9 Dec 2018 02:55:56 +0800
+Subject: [PATCH] ramips: add support for CreativeBox v1
+
+Hardware:
+SoC: MT7621
+DRAM: 512MB DDR3
+Flash: 32MB SPI-NOR
+WiFi 2.4GHz: MT7603 @ PCIe0
+WiFi 5.8GHz: MT7612 @ PCIe1
+SATA: ASM1061 @ PCIe2
+
+Interfaces:
+GBE RJ45 x5
+USB3.0 x1
+eSATA(with USB2.0) x1
+SATA x1
+UART x1
+I2C x1
+JTAG x1
+
+Flash instructions:
+Through factory bootloader or firmware web interface
+
+Signed-off-by: Weijie Gao <hackpascal@gmail.com>
+---
+ .../ramips/base-files/etc/board.d/01_leds     |   3 +
+ .../ramips/base-files/etc/board.d/02_network  |   1 +
+ .../ramips/base-files/lib/upgrade/platform.sh |   1 +
+ target/linux/ramips/dts/CreativeBox-v1.dts    | 170 ++++++++++++++++++
+ target/linux/ramips/image/mt7621.mk           |  10 ++
+ 5 files changed, 185 insertions(+)
+ create mode 100644 target/linux/ramips/dts/CreativeBox-v1.dts
+
+diff --git a/target/linux/ramips/base-files/etc/board.d/01_leds b/target/linux/ramips/base-files/etc/board.d/01_leds
+index f8c4b05b9a..478c9960ac 100755
+--- a/target/linux/ramips/base-files/etc/board.d/01_leds
++++ b/target/linux/ramips/base-files/etc/board.d/01_leds
+@@ -82,6 +82,9 @@ cf-wr800n)
+ 	ucidef_set_led_netdev "lan" "lan" "$boardname:white:ethernet" eth0.1
+ 	set_wifi_led "$boardname:white:wifi"
+ 	;;
++xzwifi,creativebox-v1)
++	ucidef_set_led_netdev "internet" "internet" "$boardname:blue:internet" "eth0.2"
++	;;
+ d240)
+ 	set_wifi_led "$boardname:blue:wifi"
+ 	;;
+diff --git a/target/linux/ramips/base-files/etc/board.d/02_network b/target/linux/ramips/base-files/etc/board.d/02_network
+index c207b7cad4..5614881f33 100755
+--- a/target/linux/ramips/base-files/etc/board.d/02_network
++++ b/target/linux/ramips/base-files/etc/board.d/02_network
+@@ -80,6 +80,7 @@ ramips_setup_interfaces()
+ 	ai-br100|\
+ 	alfa-network,ac1200rm|\
+ 	mediatek,ap-mt7621a-v60|\
++	xzwifi,creativebox-v1|\
+ 	d240|\
+ 	db-wrt01|\
+ 	dir-300-b7|\
+diff --git a/target/linux/ramips/dts/CreativeBox-v1.dts b/target/linux/ramips/dts/CreativeBox-v1.dts
+new file mode 100644
+index 0000000000..9fa0533d1f
+--- /dev/null
++++ b/target/linux/ramips/dts/CreativeBox-v1.dts
+@@ -0,0 +1,170 @@
++/dts-v1/;
++
++#include "mt7621.dtsi"
++
++#include <dt-bindings/gpio/gpio.h>
++#include <dt-bindings/input/input.h>
++
++/ {
++	compatible = "xzwifi,creativebox-v1", "mediatek,mt7621-soc";
++	model = "CreativeBox v1";
++
++	aliases {
++		led-boot = &led_sys;
++		led-failsafe = &led_sys;
++		led-running = &led_sys;
++		led-upgrade = &led_sys;
++	};
++
++	memory@0 {
++		device_type = "memory";
++		reg = <0x0 0x1C000000>,
++		      <0x20000000 0x4000000>;
++	};
++
++	chosen {
++		bootargs = "console=ttyS0,115200";
++	};
++
++	gpio-leds {
++		compatible = "gpio-leds";
++
++		power {
++			label = "creativebox-v1:blue:power";
++			gpios = <&gpio0 31 GPIO_ACTIVE_LOW>;
++			default-state = "on";
++		};
++
++		led_sys: sys {
++			label = "creativebox-v1:blue:sys";
++			gpios = <&gpio1 0 GPIO_ACTIVE_LOW>;
++		};
++
++		internet {
++			label = "creativebox-v1:blue:internet";
++			gpios = <&gpio0 29 GPIO_ACTIVE_LOW>;
++		};
++
++		wlan2g {
++			label = "creativebox-v1:blue:wlan2g";
++			gpios = <&gpio1 1 GPIO_ACTIVE_LOW>;
++			linux,default-trigger = "phy0tpt";
++		};
++
++		wlan5g {
++			label = "creativebox-v1:blue:wlan5g";
++			gpios = <&gpio0 28 GPIO_ACTIVE_LOW>;
++			linux,default-trigger = "phy1tpt";
++		};
++	};
++
++	gpio-keys-polled {
++		compatible = "gpio-keys-polled";
++		poll-interval = <20>;
++
++		reset {
++			label = "reset";
++			gpios = <&gpio0 18 GPIO_ACTIVE_LOW>;
++			linux,code = <KEY_RESTART>;
++		};
++	};
++
++	gpio_export {
++		compatible = "gpio-export";
++		#size-cells = <0>;
++
++		power_usb2 {
++			gpio-export,name = "power_usb2";
++			gpio-export,output = <1>;
++			gpios = <&gpio0 22 GPIO_ACTIVE_HIGH>;
++		};
++
++		power_usb3 {
++			gpio-export,name = "power_usb3";
++			gpio-export,output = <1>;
++			gpios = <&gpio0 25 GPIO_ACTIVE_HIGH>;
++		};
++
++		power_sata {
++			gpio-export,name = "power_sata";
++			gpio-export,output = <1>;
++			gpios = <&gpio0 27 GPIO_ACTIVE_HIGH>;
++		};
++	};
++};
++
++&spi0 {
++	status = "okay";
++
++	m25p80@0 {
++		compatible = "jedec,spi-nor";
++		reg = <0>;
++		spi-max-frequency = <40000000>;
++
++		partitions {
++			compatible = "fixed-partitions";
++			#address-cells = <1>;
++			#size-cells = <1>;
++
++			partition@0 {
++				label = "u-boot";
++				reg = <0x0 0x30000>;
++				read-only;
++			};
++
++			partition@30000 {
++				label = "u-boot-env";
++				reg = <0x30000 0x10000>;
++				read-only;
++			};
++
++			factory: partition@40000 {
++				label = "factory";
++				reg = <0x40000 0x10000>;
++				read-only;
++			};
++
++			partition@50000 {
++				compatible = "denx,uimage";
++				label = "firmware";
++				reg = <0x50000 0x1fb0000>;
++			};
++		};
++	};
++};
++
++&sdhci {
++	status = "okay";
++};
++
++&pcie {
++	status = "okay";
++};
++
++&pcie0 {
++	wifi@0,0 {
++		reg = <0x0000 0 0 0 0>;
++		mediatek,mtd-eeprom = <&factory 0x0000>;
++	};
++};
++
++&pcie1 {
++	wifi@0,0 {
++		reg = <0x0000 0 0 0 0>;
++		mediatek,mtd-eeprom = <&factory 0x8000>;
++		ieee80211-freq-limit = <5000000 6000000>;
++	};
++};
++
++&ethernet {
++	mtd-mac-address = <&factory 0xe000>;
++};
++
++&pinctrl {
++	state_default: pinctrl0 {
++		gpio {
++			ralink,group = "wdt", "rgmii2";
++			ralink,function = "gpio";
++		};
++	};
++};
+diff --git a/target/linux/ramips/image/mt7621.mk b/target/linux/ramips/image/mt7621.mk
+index 92bdbcf743..7a6350d53f 100644
+--- a/target/linux/ramips/image/mt7621.mk
++++ b/target/linux/ramips/image/mt7621.mk
+@@ -121,6 +121,16 @@ define Device/mediatek_ap-mt7621a-v60
+ endef
+ TARGET_DEVICES += mediatek_ap-mt7621a-v60
+ 
++define Device/xzwifi_creativebox-v1
++  DTS := CreativeBox-v1
++  IMAGE_SIZE := $(ralink_default_fw_size_32M)
++  DEVICE_TITLE := CreativeBox v1
++  DEVICE_PACKAGES := \
++	kmod-ata-core kmod-ata-ahci kmod-mt7603 kmod-mt76x2 kmod-sdhci-mt7620 \
++	kmod-usb3
++endef
++TARGET_DEVICES += xzwifi_creativebox-v1
++
+ define Device/elecom_wrc-1167ghbk2-s
+   DTS := WRC-1167GHBK2-S
+   IMAGE_SIZE := 15488k
+-- 
+2.17.1
+
