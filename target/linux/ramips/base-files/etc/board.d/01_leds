@@ -82,6 +82,10 @@ cf-wr800n)
 	ucidef_set_led_netdev "lan" "lan" "$boardname:white:ethernet" eth0.1
 	set_wifi_led "$boardname:white:wifi"
 	;;
+xzwifi,creativebox-v1-nor|\
+xzwifi,creativebox-v1-nand)
+	ucidef_set_led_netdev "internet" "internet" "creativebox-v1:blue:internet" "eth0.2"
+	;;
 d240)
 	set_wifi_led "$boardname:blue:wifi"
 	;;
