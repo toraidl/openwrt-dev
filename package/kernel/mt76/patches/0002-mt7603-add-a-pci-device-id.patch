@@ -1,0 +1,29 @@
+From 7d0bd622b1accfa8cbae78185f5d3b04d19e7240 Mon Sep 17 00:00:00 2001
+From: Weijie Gao <hackpascal@gmail.com>
+Date: Sun, 9 Dec 2018 02:27:51 +0800
+Subject: [PATCH 2/2] mt7603: add a pci device id
+
+Some on-board mt7603e has a pci id 1400:7603 which not recognised by this
+driver.
+This patch adds this id so that it can be probed by this driver.
+
+SIgned-off-by: Weijie Gao <hackpascal@gmail.com>
+---
+ mt7603/pci.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/mt7603/pci.c b/mt7603/pci.c
+index cc740bc..a07a5d5 100644
+--- a/mt7603/pci.c
++++ b/mt7603/pci.c
+@@ -23,6 +23,7 @@
+ 
+ static const struct pci_device_id mt76pci_device_table[] = {
+ 	{ PCI_DEVICE(0x14c3, 0x7603) },
++	{ PCI_DEVICE(0x1400, 0x7603) },
+ 	{ },
+ };
+ 
+-- 
+2.17.1
+
