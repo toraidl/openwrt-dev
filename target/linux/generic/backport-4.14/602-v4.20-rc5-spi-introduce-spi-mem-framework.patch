@@ -1,0 +1,62 @@
+diff --git a/drivers/spi/Kconfig b/drivers/spi/Kconfig
+index a75f2a2c..378e6a40 100644
+--- a/drivers/spi/Kconfig
++++ b/drivers/spi/Kconfig
+@@ -51,6 +51,13 @@ config SPI_MASTER
+ 
+ if SPI_MASTER
+ 
++config SPI_MEM
++	bool "SPI memory extension"
++	help
++	  Enable this option if you want to enable the SPI memory extension.
++	  This extension is meant to simplify interaction with SPI memories
++	  by providing an high-level interface to send memory-like commands.
++
+ comment "SPI Master Controller Drivers"
+ 
+ config SPI_ALTERA
+diff --git a/drivers/spi/Makefile b/drivers/spi/Makefile
+index 8e0cda73..d95bfe95 100644
+--- a/drivers/spi/Makefile
++++ b/drivers/spi/Makefile
+@@ -8,6 +8,7 @@ ccflags-$(CONFIG_SPI_DEBUG) := -DDEBUG
+ # small core, mostly translating board-specific
+ # config declarations into driver model code
+ obj-$(CONFIG_SPI_MASTER)		+= spi.o
++obj-$(CONFIG_SPI_MEM)			+= spi-mem.o
+ obj-$(CONFIG_SPI_SPIDEV)		+= spidev.o
+ obj-$(CONFIG_SPI_LOOPBACK_TEST)		+= spi-loopback-test.o
+ 
+diff --git a/include/linux/spi/spi.h b/include/linux/spi/spi.h
+index 7b2170bf..f49b684d 100644
+--- a/include/linux/spi/spi.h
++++ b/include/linux/spi/spi.h
+@@ -27,6 +27,7 @@ struct property_entry;
+ struct spi_controller;
+ struct spi_transfer;
+ struct spi_flash_read_message;
++struct spi_controller_mem_ops;
+ 
+ /*
+  * INTERFACES between SPI master-side drivers and SPI slave protocol handlers,
+@@ -376,6 +377,9 @@ static inline void spi_unregister_driver(struct spi_driver *sdrv)
+  *                    transfer_one callback.
+  * @handle_err: the subsystem calls the driver to handle an error that occurs
+  *		in the generic implementation of transfer_one_message().
++ * @mem_ops: optimized/dedicated operations for interactions with SPI memory.
++ *	     This field is optional and should only be implemented if the
++ *	     controller has native support for memory like operations.
+  * @unprepare_message: undo any work done by prepare_message().
+  * @slave_abort: abort the ongoing transfer request on an SPI slave controller
+  * @spi_flash_read: to support spi-controller hardwares that provide
+@@ -564,6 +568,9 @@ struct spi_controller {
+ 	void (*handle_err)(struct spi_controller *ctlr,
+ 			   struct spi_message *message);
+ 
++	/* Optimized handlers for SPI memory-like operations. */
++	const struct spi_controller_mem_ops *mem_ops;
++
+ 	/* gpio chip select */
+ 	int			*cs_gpios;
+ 
